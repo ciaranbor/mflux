@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import mlx.core as mx
-import torch
 from huggingface_hub import snapshot_download
 from mlx.utils import tree_unflatten
-from safetensors.torch import load_file as torch_load_file
 
 from mflux.cli.defaults.defaults import MFLUX_CACHE_DIR
 from mflux.models.common.resolution.path_resolution import PathResolution
@@ -199,6 +197,13 @@ class WeightLoader:
 
     @staticmethod
     def _load_torch_checkpoint(file_path: Path) -> dict[str, mx.array]:
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(
+                "Loading .pt checkpoint files requires PyTorch. "
+                "Install it with: pip install torch"
+            ) from None
         pt_weights = torch.load(file_path, map_location="cpu", weights_only=False)
         return {k: mx.array(v.numpy()) for k, v in pt_weights.items() if isinstance(v, torch.Tensor)}
 
@@ -206,12 +211,8 @@ class WeightLoader:
     def _load_safetensors(path: Path, loading_mode: str, weight_files: list[str] | None = None) -> dict[str, mx.array]:
         if loading_mode == "mlx_native":
             return WeightLoader._load_mlx_native(path, weight_files)
-        elif loading_mode == "torch_convert":
-            return WeightLoader._load_torch_convert(path, weight_files)
         elif loading_mode == "multi_json":
             return WeightLoader._load_multi_json(path)
-        elif loading_mode == "torch_bfloat16":
-            return WeightLoader._load_torch_bfloat16(path)
         elif loading_mode == "single":
             return WeightLoader._load_single(path)
         elif loading_mode == "multi_glob":
@@ -241,30 +242,6 @@ class WeightLoader:
         return all_weights
 
     @staticmethod
-    def _load_torch_convert(path: Path, weight_files: list[str] | None = None) -> dict[str, mx.array]:
-        if weight_files:
-            # Load only specified files
-            missing = [f for f in weight_files if not (path / f).exists()]
-            if missing:
-                raise FileNotFoundError(f"Missing specified weight files in {path}: {missing}")
-            shard_files = [path / f for f in weight_files]
-        else:
-            # Fall back to loading all safetensors files
-            shard_files = sorted(f for f in path.glob("*.safetensors") if not f.name.startswith("._"))
-            if not shard_files:
-                raise FileNotFoundError(f"No safetensors files found in {path}")
-
-        all_weights: dict[str, mx.array] = {}
-        for shard in shard_files:
-            torch_weights = torch_load_file(str(shard))
-            for key, tensor in torch_weights.items():
-                if tensor.dtype == torch.bfloat16:
-                    tensor = tensor.to(torch.float16)
-                all_weights[key] = mx.array(tensor.numpy())
-
-        return all_weights
-
-    @staticmethod
     def _load_multi_json(path: Path) -> dict[str, mx.array]:
         index_path = path / "model.safetensors.index.json"
         with open(index_path) as f:
@@ -287,26 +264,6 @@ class WeightLoader:
             for param_name in param_names:
                 if param_name in file_weights:
                     all_weights[param_name] = file_weights[param_name]
-
-        return all_weights
-
-    @staticmethod
-    def _load_torch_bfloat16(path: Path) -> dict[str, mx.array]:
-        index_path = path / "model.safetensors.index.json"
-        with open(index_path) as f:
-            index = json.load(f)
-
-        weight_files = sorted(set(index["weight_map"].values()))
-
-        all_weights: dict[str, mx.array] = {}
-        for wf in weight_files:
-            file_path = path / wf
-            data = torch_load_file(str(file_path))
-            for k, v in data.items():
-                if v.dtype == torch.bfloat16:
-                    v = v.to(torch.float16)
-                np_arr = v.detach().cpu().numpy()
-                all_weights[k] = mx.array(np_arr)
 
         return all_weights
 

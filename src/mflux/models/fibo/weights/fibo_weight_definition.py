@@ -15,7 +15,7 @@ class FIBOWeightDefinition:
                 name="vae",
                 hf_subdir="vae",
                 num_blocks=4,
-                loading_mode="torch_convert",
+                loading_mode="mlx_native",
                 mapping_getter=FIBOWeightMapping.get_vae_mapping,
             ),
             ComponentDefinition(
@@ -23,14 +23,14 @@ class FIBOWeightDefinition:
                 hf_subdir="transformer",
                 num_blocks=38,
                 num_layers=46,
-                loading_mode="torch_convert",
+                loading_mode="mlx_native",
                 mapping_getter=FIBOWeightMapping.get_transformer_mapping,
             ),
             ComponentDefinition(
                 name="text_encoder",
                 hf_subdir="text_encoder",
                 num_blocks=36,
-                loading_mode="torch_convert",
+                loading_mode="mlx_native",
                 mapping_getter=FIBOWeightMapping.get_text_encoder_mapping,
             ),
         ]
