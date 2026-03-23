@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import mlx.core as mx
 import numpy as np
 import PIL.Image
@@ -41,6 +40,13 @@ class ConceptUtil:
 
     @staticmethod
     def _to_heatmap_image(heatmap: mx.array, height: int, width: int) -> PIL.Image.Image:
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError(
+                "Concept attention heatmaps require matplotlib. "
+                "Install it with: pip install matplotlib"
+            ) from None
         concept_heatmaps_min = heatmap.min()
         concept_heatmaps_max = heatmap.max()
         colored_heatmaps = []

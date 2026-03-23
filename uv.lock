@@ -1044,7 +1044,6 @@ source = { editable = "." }
 dependencies = [
     { name = "hf-transfer" },
     { name = "huggingface-hub" },
-    { name = "matplotlib" },
     { name = "mlx", version = "0.30.3", source = { registry = "https://pypi.org/simple" }, extra = ["cuda13"], marker = "sys_platform == 'linux'" },
     { name = "mlx", version = "0.31.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'darwin'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1062,6 +1061,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+concept = [
+    { name = "matplotlib" },
+]
 depth-pro = [
     { name = "torch" },
 ]
@@ -1081,7 +1083,7 @@ release = [
 requires-dist = [
     { name = "hf-transfer", specifier = ">=0.1.9,<1.0" },
     { name = "huggingface-hub", specifier = ">=1.1.6,<2.0" },
-    { name = "matplotlib", specifier = ">=3.9.2,<4.0" },
+    { name = "matplotlib", marker = "extra == 'concept'", specifier = ">=3.9.2,<4.0" },
     { name = "matplotlib", marker = "extra == 'dev'", specifier = ">3.10,<4.0" },
     { name = "mlx", marker = "sys_platform == 'darwin'", specifier = ">=0.27.0,<0.32.0" },
     { name = "mlx", marker = "sys_platform == 'darwin' and extra == 'dev'", specifier = "==0.31.0" },
@@ -1105,7 +1107,7 @@ requires-dist = [
     { name = "transformers", specifier = ">=5.0.0,<6.0" },
     { name = "twine", marker = "extra == 'release'", specifier = ">=6.1.0,<7.0" },
 ]
-provides-extras = ["depth-pro", "release", "dev"]
+provides-extras = ["depth-pro", "concept", "release", "dev"]
 
 [[package]]
 name = "mlx"
